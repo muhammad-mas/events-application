@@ -1,4 +1,11 @@
+import EventForm from "../components/EventForm";
+
 function EventsCreatePage() {
-  return <h1>Event Create Page</h1>;
+  // better approach i.e. using actions
+  // const submitHandler = (event) => {
+  //   event.preventDefault();
+
+  // };
+  return <EventForm method="POST" />;
 }
 export default EventsCreatePage;

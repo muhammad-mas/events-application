@@ -1,39 +1,119 @@
-import { useNavigate } from 'react-router-dom';
-
-import classes from './EventForm.module.css';
+import {
+  Form,
+  useActionData,
+  useNavigate,
+  useNavigation,
+  json,
+  redirect,
+} from "react-router-dom";
+import classes from "./EventForm.module.css";
 
 function EventForm({ method, event }) {
+  const data = useActionData();
+
   const navigate = useNavigate();
+  const navigation = useNavigation();
+
+  const isSubmitting = navigation.state === "submitting";
   function cancelHandler() {
-    navigate('..');
+    navigate("..");
   }
 
   return (
-    <form className={classes.form}>
+    // using Form and method post will be caught by action method ,
+    // If I want to use some other action function need to set action url for other route <Form action="<otherUrl></otherUrl>" ></Form>
+    <Form method={method} className={classes.form}>
+      {data && data.errors && (
+        <ul>
+          {Object.keys(data.errors).map((key) => {
+            return (
+              <li key={key}>
+                {key}- {data.errors[key]}
+              </li>
+            );
+          })}
+        </ul>
+      )}
       <p>
         <label htmlFor="title">Title</label>
-        <input id="title" type="text" name="title" required />
+        <input
+          id="title"
+          type="text"
+          name="title"
+          required
+          defaultValue={event ? event.title : ""}
+        />
       </p>
       <p>
         <label htmlFor="image">Image</label>
-        <input id="image" type="url" name="image" required />
+        <input
+          id="image"
+          type="url"
+          name="image"
+          required
+          defaultValue={event ? event.image : ""}
+        />
       </p>
       <p>
         <label htmlFor="date">Date</label>
-        <input id="date" type="date" name="date" required />
+        <input
+          id="date"
+          type="date"
+          name="date"
+          required
+          defaultValue={event ? event.date : ""}
+        />
       </p>
       <p>
         <label htmlFor="description">Description</label>
-        <textarea id="description" name="description" rows="5" required />
+        <textarea
+          id="description"
+          name="description"
+          rows="5"
+          required
+          defaultValue={event ? event.description : ""}
+        />
       </p>
       <div className={classes.actions}>
-        <button type="button" onClick={cancelHandler}>
+        <button type="button" onClick={cancelHandler} disabled={isSubmitting}>
           Cancel
         </button>
-        <button>Save</button>
+        <button disabled={isSubmitting}>
+          {isSubmitting ? "Submitting..." : "Save"}
+        </button>
       </div>
-    </form>
+    </Form>
   );
 }
 
 export default EventForm;
+export async function action({ request, params }) {
+  console.log(request);
+  const data = await request.formData();
+  console.log(data);
+  const eventData = {
+    title: data.get("title"),
+    image: data.get("image"),
+    date: data.get("date"),
+    description: data.get("description"),
+  };
+  let url = "http://localhost:8080/events";
+  if (request.method === "PATCH") {
+    url = url + "/" + params.id;
+  }
+  const response = await fetch(url, {
+    method: request.method,
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(eventData),
+  });
+  if (response.status === 422) {
+    return response;
+  }
+  if (!response.ok) {
+    throw json({ message: "Couldn't add new event." }, { status: 500 });
+  } else {
+    return redirect("/events");
+  }
+}

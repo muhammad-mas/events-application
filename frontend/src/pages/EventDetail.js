@@ -95,7 +95,7 @@ export async function loader({ request, params }) {
   // request has url param
   return defer({
     events: loadEvents(),
-    eventDetails: loadEventDetails(params),
+    eventDetails: await loadEventDetails(params),
   });
 
   // const id = params.id;
